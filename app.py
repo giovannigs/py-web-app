@@ -1,34 +1,57 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
+import plotly.graph_objects as go
+import json
+import io
+from modules import available, quoteTicker, infoTicker, sendQuestion
 
+# Configuração da página Streamlit para layout largo
 st.set_page_config(layout="wide")
 
-df_reviews = pd.read_csv("./datasets/customer_reviews.csv",header=0,delimiter=",")
-df_top100_books = pd.read_csv("./datasets/Top-100 Trending Books.csv",header=0,delimiter=",")
+# Carregando e normalizando dados de ações a partir de um arquivo JSON
+df_list_stocks = pd.read_json(io.StringIO(json.dumps(available())))
 
-price_max = df_top100_books["book price"].max()
-price_min = df_top100_books["book price"].min()
-max_price =  st.sidebar.slider("Price Range", price_min, price_max, ((price_max+price_min)/2))
+# Seleção de ticker através da barra lateral
+option = st.sidebar.selectbox("Selecione um Ticker:", df_list_stocks)
 
-year_max = df_top100_books["year of publication"].max()
-year_min = df_top100_books["year of publication"].min()
-max_year =  st.sidebar.slider("Max year of publication", year_min, year_max, (year_max))
+# Filtrando o DataFrame pelo ticker selecionado
+df_quote = pd.read_json(io.StringIO(json.dumps(quoteTicker(option))))
+df_quote = df_quote[df_quote['volume'] > 0]
 
-df_books = df_top100_books[(df_top100_books["book price"] <= max_price) & (df_top100_books["year of publication"] <= max_year)]
-df_books
+df_info_json = infoTicker(option)
+df_info = pd.DataFrame([df_info_json])
 
-fig_bar = px.bar(df_books,
-                 x="year of publication",
-                 y="book price")
+company = f"{option} - {df_info_json['longName']}"
+df_chatgpt_analysis = sendQuestion(df_quote, company)
 
-fig_scatter = px.scatter(df_books,
-                 y="rating",
-                 x="year of publication",
-                #  color="genre",
-                 size="book price",
-                 hover_name="book title")
+# Criação do gráfico de velas
+fig_quote = go.Figure(data=[go.Candlestick(x=df_quote['date'],
+                      open=df_quote['open'],
+                      high=df_quote['high'],
+                      low=df_quote['low'],
+                      close=df_quote['close'])])
 
+# Configuração do layout do gráfico
+fig_quote.update_layout(
+    # title=f'Ticker: {option}',
+    xaxis_title='Data',
+    yaxis_title='Preço',
+    xaxis_rangeslider_visible=False,
+    hovermode='x',
+    xaxis=dict(
+        showspikes=True, spikethickness=0.5, spikedash='dash', 
+        spikecolor="#999999", spikemode='across'),
+    yaxis=dict(
+        side='right', tickformat=',.4f', showspikes=True, 
+        spikethickness=0.5, spikedash='dash', spikecolor="#999999")
+)
 
-st.plotly_chart(fig_bar)
-st.plotly_chart(fig_scatter)
+# Exibição da logo e nome da empresa
+col1, col2 = st.columns([1,20])
+col1.image(df_info_json['logourl'], width=50)
+col2.markdown(f"### {option} - {df_info_json['longName']}")
+
+# Exibição do gráfico e análise do ChatGPT
+st.plotly_chart(fig_quote, use_container_width=True)
+st.subheader("Análise dos preços da Ação",divider="grey")
+st.markdown(df_chatgpt_analysis)
