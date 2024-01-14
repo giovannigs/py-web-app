@@ -100,17 +100,21 @@ def sendQuestion(data,company):
         api_key=os.getenv('CHATGPTTOKEN'),
     )
 
-    chat_completion = client.completions.create(
-        # messages=[
-        #     {
-        #         "role": "user",
-        #         "content": f"Com base nos dados a seguir, realize uma análise dos preços de abertura, máxima, mínima e fechamento da ação, além de verificar tendências de alta ou queda, médias dos últimos dias, etc. Dados:\n{df_string}",
-        #     }
-        # ],
-        prompt=f"Com base nos dados a seguir, realize uma análise dos preços de abertura, máxima, mínima e fechamento da ação {company}, além de verificar tendências de alta ou queda, médias dos últimos dias, etc. Por favor não retorne os mesmos dados fornecidos em formato de uma tabela. Dados:\n{df_string}",
-        model="gpt-3.5-turbo-instruct",
-        max_tokens=550,
+    chat_completion = client.chat.completions.create(
+        messages=[
+            {
+                "role": "system",
+                "content": "Você irá receber dados de preço de uma determinada ação e sua tarefa será resumir os dados recebidos em tendências, médias e possíveis preços futuros."
+            },
+            {
+                "role":"user",
+                "content":f"Ação:\n{company}. Dados:\n{df_string}"
+                # "content":f"Com base nos dados a seguir, realize uma análise dos preços de abertura, máxima, mínima e fechamento da ação {company}, além de verificar tendências de alta ou queda, médias dos últimos dias, etc. Por favor não retorne os mesmos dados fornecidos em formato de uma tabela. Dados:\n{df_string}"
+            }
+        ],
+        model="gpt-3.5-turbo",
+        max_tokens=456,
         temperature=0.7
     )
 
-    return chat_completion.choices[0].text
+    return chat_completion.choices[0].message.content
