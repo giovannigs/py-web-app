@@ -3,3 +3,5 @@
 test*
 /__pycache__
 logError*
+generate_keys*
+config.yaml

@@ -24,11 +24,11 @@ def available(select='stocks') -> dict:
     
     if response.status_code == 200:
         data = response.json()[f'{select}']
-        # st.success("Fetched data from API!")
         return data
     else:
         logError(response.status_code)
 
+@st.cache_data
 def quoteList(select='stocks') -> dict:
     url = "https://brapi.dev/api/quote/list"
     params = {
@@ -56,7 +56,6 @@ def quoteTicker(ticker,range='3mo') -> dict:
     
     if response.status_code == 200:
         data = response.json()['results'][0]['historicalDataPrice']
-        # st.success("Fetched data from API!")
         return data
     else:
         logError(response.status_code)
@@ -78,7 +77,6 @@ def infoTicker(ticker,range='3mo') -> dict:
         data.pop("validIntervals")
         data.pop("validRanges")
         data.pop("usedInterval")
-        # st.success("Fetched data from API!")
         return data
     else:
         logError(response.status_code)
@@ -89,8 +87,6 @@ def infoTicker(ticker,range='3mo') -> dict:
 ############################
 
 def sendQuestion(data,company):
-    # df = pd.DataFrame(data)
-
     # Convertendo o DataFrame para uma string formatada
     df_string = data.to_string()
 
@@ -107,7 +103,6 @@ def sendQuestion(data,company):
             {
                 "role":"user",
                 "content":f"Ação:\n{company}. Dados:\n{df_string}"
-                # "content":f"Com base nos dados a seguir, realize uma análise dos preços de abertura, máxima, mínima e fechamento da ação {company}, além de verificar tendências de alta ou queda, médias dos últimos dias, etc. Por favor não retorne os mesmos dados fornecidos em formato de uma tabela. Dados:\n{df_string}"
             }
         ],
         model="gpt-3.5-turbo",
