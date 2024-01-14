@@ -1,19 +1,11 @@
-from datetime import datetime
-import requests
-import json
-from openai import OpenAI
 from dotenv import load_dotenv
+from datetime import datetime
+from openai import OpenAI
+import streamlit as st
+import requests
 import os
 
 load_dotenv()
-
-def token():
-    token = os.getenv('BRAPITOKEN')
-    return token
-
-def tokenAI():
-    token = os.getenv('CHATGPTTOKEN')
-    return token
 
 def logError(status_code, filePath='logError.txt'):
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -24,6 +16,7 @@ def logError(status_code, filePath='logError.txt'):
 # brAPI endpoints functions #
 #############################
 
+@st.cache_data
 def available(select='stocks') -> dict:
     url = "https://brapi.dev/api/available"
     
@@ -31,6 +24,7 @@ def available(select='stocks') -> dict:
     
     if response.status_code == 200:
         data = response.json()[f'{select}']
+        # st.success("Fetched data from API!")
         return data
     else:
         logError(response.status_code)
@@ -38,7 +32,7 @@ def available(select='stocks') -> dict:
 def quoteList(select='stocks') -> dict:
     url = "https://brapi.dev/api/quote/list"
     params = {
-        'token': token(),
+        'token': os.getenv('BRAPITOKEN'),
     }
  
     response = requests.get(url, params=params)
@@ -49,28 +43,31 @@ def quoteList(select='stocks') -> dict:
     else:
         logError(response.status_code)
 
+@st.cache_data
 def quoteTicker(ticker,range='3mo') -> dict:
     url = f"https://brapi.dev/api/quote/{ticker}"
     params = {
         'range': range,
         'interval': '1d',
-        'token': token(),
+        'token': os.getenv('BRAPITOKEN'),
     }
     
     response = requests.get(url, params=params, timeout=30)
     
     if response.status_code == 200:
         data = response.json()['results'][0]['historicalDataPrice']
+        # st.success("Fetched data from API!")
         return data
     else:
         logError(response.status_code)
 
+@st.cache_data
 def infoTicker(ticker,range='3mo') -> dict:
     url = f"https://brapi.dev/api/quote/{ticker}"
     params = {
         'range': range,
         'interval': '1d',
-        'token': token(),
+        'token': os.getenv('BRAPITOKEN'),
     }
     
     response = requests.get(url, params=params, timeout=30)
@@ -81,6 +78,7 @@ def infoTicker(ticker,range='3mo') -> dict:
         data.pop("validIntervals")
         data.pop("validRanges")
         data.pop("usedInterval")
+        # st.success("Fetched data from API!")
         return data
     else:
         logError(response.status_code)

@@ -27,14 +27,10 @@ preco_anterior = df_quote['close'].iloc[-2]
 # Calcular a variação percentual
 var_percentual = ((ultimo_preco - preco_anterior) / preco_anterior) * 100
 
-# Determinar a direção da seta
-seta = '↑' if ultimo_preco > preco_anterior else '↓'
-
 df_info_json = infoTicker(option)
 df_info = pd.DataFrame([df_info_json])
 
 company = f"{option} - {df_info_json['longName']}"
-df_chatgpt_analysis = sendQuestion(df_quote, company)
 
 # Criação do gráfico de velas
 fig_quote = go.Figure(data=[go.Candlestick(x=df_quote['date'],
@@ -46,8 +42,8 @@ fig_quote = go.Figure(data=[go.Candlestick(x=df_quote['date'],
 # Configuração do layout do gráfico
 fig_quote.update_layout(
     # title=f'Ticker: {option}',
-    xaxis_title='Data',
-    yaxis_title='Preço',
+    # xaxis_title='Data',
+    # yaxis_title='Preço',
     xaxis_rangeslider_visible=False,
     hovermode='x',
     xaxis=dict(
@@ -63,9 +59,13 @@ col1, col2, col3, col4 = st.columns([0.15,1,1,0.25])
 col1.image(df_info_json['logourl'], width=50)
 col2.markdown(f"### {option} - {df_info_json['longName']}")
 col3.empty()
-col4.metric(label="Último preço", value=f"{ultimo_preco:.2f}", delta=f"{var_percentual:.2f}% {seta}")
+col4.metric(label="Último preço", value=f"{ultimo_preco:.2f}", delta=f"{var_percentual:.2f}%")
 
 # Exibição do gráfico e análise do ChatGPT
 st.plotly_chart(fig_quote, use_container_width=True)
 st.subheader("Análise dos preços da Ação",divider="grey")
-st.markdown(df_chatgpt_analysis)
+
+
+if st.button("Clique para obter análise do ChatGPT-3.5"):
+    with st.spinner("Aguardando resposta..."):
+        st.markdown(sendQuestion(df_quote, company))
